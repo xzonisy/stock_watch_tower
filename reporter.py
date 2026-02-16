@@ -51,3 +51,44 @@ def print_sector_ranking(ranked_df):
     
     print("\n" + Fore.GREEN + "前三名：關注區域 (Focus Area)" + Style.RESET_ALL)
     print(Fore.RED + "後三名：避免/黑名單 (Avoid/Blacklist)" + Style.RESET_ALL)
+
+def print_stock_analysis(sector_results):
+    """
+    Prints the analysis of individual stocks within the top sectors.
+    sector_results: dict { sector: [ {ticker, results}, ... ] }
+    """
+    print("\n" + Style.BRIGHT + "領先板塊個股篩選 (Top Sector Stock Screen)" + Style.RESET_ALL)
+    print("篩選標準: 價格 > 50EMA & 21EMA (趨勢), 波動收縮 (Coiling)")
+    print("=" * 60)
+    
+    for sector, stocks in sector_results.items():
+        print(f"\n{Style.BRIGHT}{Fore.YELLOW}板塊: {sector}{Style.RESET_ALL}")
+        
+        # Filter for "good" setups (Score >= 2)
+        good_setups = [s for s in stocks if s['results'] and s['results']['Score'] >= 2]
+        
+        if not good_setups:
+            print("  無符合條件的個股 (No setups found)")
+            continue
+            
+        table_data = []
+        for s in good_setups:
+            res = s['results']
+            
+            # Trend Status
+            trend = "✅" if res['Price > 50EMA'] and res['Price > 21EMA'] else "⚠️"
+            if res['Price > 50EMA'] and not res['Price > 21EMA']: trend = "Above 50, Below 21"
+            
+            # Contraction
+            coil = "🔥 Tight" if res['Contracting'] else "Normal"
+            
+            row = [
+                s['ticker'],
+                trend,
+                coil,
+                f"{res['Current Vol']:.2%}"
+            ]
+            table_data.append(row)
+            
+        headers = ["Ticker", "Trend (>21/50)", "Volatility", "Vol %"]
+        print(tabulate(table_data, headers=headers, tablefmt="simple"))

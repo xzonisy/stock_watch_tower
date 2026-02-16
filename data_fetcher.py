@@ -7,10 +7,13 @@ def fetch_data(tickers, period="6mo"):
     Fetches historical data for the given tickers.
     """
     print(f"Fetching data for {len(tickers)} tickers...")
-    data = yf.download(tickers, period=period, progress=False)['Close']
+    # Fetch full data
+    data = yf.download(tickers, period=period, progress=False)
     
-    # Ensure data is a DataFrame even if single ticker (though we expect multiple)
-    if isinstance(data, pd.Series):
-        data = data.to_frame()
+    # If we only have one level of columns (single ticker), yfinance might return simple DF.
+    # If multiple tickers, it returns MultiIndex columns (Price, Ticker).
+    
+    # For compatibility with existing code which expects just 'Close' for sectors:
+    # We can add a flag or just return 'Close' by default, but we need OHLC for stocks.
     
     return data

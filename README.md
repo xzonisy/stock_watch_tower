@@ -1,6 +1,6 @@
-# 每週板塊輪動監測 (Weekly Sector Rotation Monitor)
+# 每週板塊輪動監測 (Weekly Sector Rotation Monitor) 使用指南
 
-這是一個 Python 腳本，用於監測美股板塊 ETF ($XLK, $XLF 等)，根據過去 4 週和 12 週相對於 $SPY 和 $QQQ 的表現進行排名。
+我已經實作了一個 Python 腳本來監測美股板塊 ETF ($XLK, $XLF 等)，根據過去 4 週和 12 週相對於 $SPY 和 $QQQ 的表現進行排名。
 
 ## 安裝設定 (Setup)
 
@@ -47,7 +47,28 @@ python main.py
 後三名：避免/黑名單 (Avoid/Blacklist)
 ```
 
+## 個股篩選 (Individual Stock Screening)
+
+腳本會自動分析前三大領先板塊中的主要成分股，並根據以下技術指標進行篩選：
+-   **趨勢**: 股價 > 50 EMA 且 > 21 EMA。
+-   **波動收縮 (Coiling)**: 檢查近期波動率是否低於歷史平均，尋找盤整待突破的標的。
+
+### 個股輸出範例 (Stock Screen Output)
+
+```text
+領先板塊個股篩選 (Top Sector Stock Screen)
+篩選標準: 價格 > 50EMA & 21EMA (趨勢), 波動收縮 (Coiling)
+============================================================
+
+板塊: XLK
+Ticker    Trend (>21/50)    Volatility    Vol %
+--------  ----------------  ------------  -------
+MSFT      ✅                Normal        1.25%
+NVDA      ✅                🔥 Tight      1.80%
+...
+```
+
 ## 下一步 (Next Steps)
 
--   **深入研究 (Drill Down)**：一旦確定了領先板塊，使用您的圖表平台尋找結構良好的個別股票。
--   **風險管理 (Risk Management)**：監控領先板塊是否開始出現高點降低的情況。
+-   **深入研究 (Drill Down)**：一旦程式篩選出潛在標的，請打開圖表確認是否符合「第一階段底部」型態。
+-   **風險管理 (Risk Management)**：注意板塊輪動的警訊，如果領先板塊開始轉弱，應減少曝險。
