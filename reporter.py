@@ -178,5 +178,142 @@ def print_stock_analysis(sector_results):
             ]
             table_data.append(row)
             
-        headers = ["Ticker", "Trend (>21/50)", "Volatility", "Vol %"]
-        print(tabulate(table_data, headers=headers, tablefmt="simple"))
+
+import base64
+import json
+
+def simple_encrypt(text, pin):
+    """
+    Simple XOR encryption with the PIN to prevent casual 'View Source' peeking.
+    """
+    # Simply convert PIN to string for key
+    pin_str = str(pin)
+    if not pin_str:
+        return text 
+        
+    # Expand PIN to match text length
+    key = (pin_str * (len(text) // len(pin_str) + 1))[:len(text)]
+    
+    encrypted_chars = []
+    for t, k in zip(text, key):
+        # XOR and keep within printable range if possible, or just use ordained values
+        # We will base64 encode the result anyway, so raw bytes are fine.
+        # However, to be safe with unicode strings, let's work with utf-8 bytes
+        # Standard XOR on string characters might produce invalid unicode.
+        pass
+    
+    # Better approach: XOR bytes
+    text_bytes = text.encode('utf-8')
+    key_bytes = key.encode('utf-8')
+    
+    encrypted_bytes = bytearray()
+    for t, k in zip(text_bytes, key_bytes):
+        encrypted_bytes.append(t ^ k)
+        
+    # Return as base64 string for safe embedding in HTML
+    return base64.b64encode(encrypted_bytes).decode('utf-8')
+
+def generate_html(report_text, pin):
+    """
+    Generates a password-protected HTML file.
+    The content is encrypted with the PIN, so 'View Source' shows garbage.
+    """
+    encrypted_content = simple_encrypt(report_text, pin)
+    
+    html_template = f"""
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Watch Tower - Weekly Report</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }}
+        .container {{ background-color: #2d2d2d; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); max-width: 800px; width: 100%; }}
+        h1 {{ text-align: center; color: #4caf50; }}
+        #login-area {{ text-align: center; }}
+        input {{ padding: 10px; font-size: 1.2rem; border-radius: 5px; border: 1px solid #444; background: #333; color: white; width: 150px; text-align: center; }}
+        button {{ padding: 10px 20px; font-size: 1.2rem; border-radius: 5px; border: none; background-color: #4caf50; color: white; cursor: pointer; margin-left: 10px; }}
+        button:hover {{ background-color: #45a049; }}
+        #content-area {{ white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; display: none; line-height: 1.5; }}
+        .error {{ color: #ff5252; margin-top: 10px; display: none; }}
+        pre {{ background: #111; padding: 15px; border-radius: 5px; overflow-x: auto; }}
+        .hidden-data {{ display: none; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Weekly Analysis Report</h1>
+        
+        <div id="login-area">
+            <p>Please enter the 4-digit PIN from Discord to view the report.</p>
+            <input type="password" id="pin-input" maxlength="4" placeholder="PIN">
+            <button onclick="unlock()">Unlock</button>
+            <p class="error" id="error-msg">Incorrect PIN</p>
+        </div>
+
+        <div id="content-area"></div>
+    </div>
+    
+    <div id="encrypted-data" class="hidden-data">{encrypted_content}</div>
+
+    <script>
+        function unlock() {{
+            const pin = document.getElementById('pin-input').value;
+            const encryptedData = document.getElementById('encrypted-data').innerText;
+            const errorMsg = document.getElementById('error-msg');
+            
+            try {{
+                const decryptedHTML = simple_decrypt(encryptedData, pin);
+                
+                // Simple validation check: Report usually starts with specific headers
+                if (decryptedHTML.includes("每週板塊輪動監測")) {{
+                    document.getElementById('login-area').style.display = 'none';
+                    const contentArea = document.getElementById('content-area');
+                    contentArea.style.display = 'block';
+                    contentArea.innerHTML = '<pre>' + decryptedHTML + '</pre>';
+                    errorMsg.style.display = 'none';
+                }} else {{
+                    throw new Error("Decryption failed");
+                }}
+            }} catch (e) {{
+                errorMsg.style.display = 'block';
+                console.error(e);
+            }}
+        }}
+
+        function simple_decrypt(base64Text, pin) {{
+            // Decode Base64
+            const encryptedBytes = Uint8Array.from(atob(base64Text), c => c.charCodeAt(0));
+            
+            // Prepare Key Bytes
+            const encoder = new TextEncoder();
+            const pinBytes = encoder.encode(pin);
+            const keyBytes = new Uint8Array(encryptedBytes.length);
+            
+            for (let i = 0; i < encryptedBytes.length; i++) {{
+                keyBytes[i] = pinBytes[i % pinBytes.length];
+            }}
+            
+            // XOR Decrypt
+            const decryptedBytes = new Uint8Array(encryptedBytes.length);
+            for (let i = 0; i < encryptedBytes.length; i++) {{
+                decryptedBytes[i] = encryptedBytes[i] ^ keyBytes[i];
+            }}
+            
+            // Decode UTF-8
+            const decoder = new TextDecoder();
+            return decoder.decode(decryptedBytes);
+        }}
+        
+        // Allow Enter key
+        document.getElementById('pin-input').addEventListener('keypress', function (e) {{
+            if (e.key === 'Enter') {{
+                unlock();
+            }}
+        }});
+    </script>
+</body>
+</html>
+    """
+    return html_template

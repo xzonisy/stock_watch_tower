@@ -3,19 +3,30 @@ import json
 import config
 import sys
 
-def send_discord_report(report_text):
+def send_discord_report(report_text, pin=None, url=None):
     """
     Sends the provided report text to the configured Discord Webhook.
-    Splits the message if it exceeds Discord's 2000 character limit.
+    If pin and url are provided, adds a header with the link and PIN.
     """
     if not config.DISCORD_WEBHOOK_URL:
         print("Discord Webhook URL not configured. Skipping notification.")
         return
 
-    url = config.DISCORD_WEBHOOK_URL
+    url_webhook = config.DISCORD_WEBHOOK_URL
+    
+    # Construct Message
+    message_content = ""
+    if pin and url:
+        message_content += f"🔒 **Weekly Report Updated!**\n"
+        message_content += f"🔗 **Link:** {url}\n"
+        message_content += f"🔑 **PIN:** `{pin}`\n"
+        message_content += "----------------------------------------\n"
+    
+    message_content += report_text
     
     # Discord limit is 2000, we'll slice securely
     chunks = []
+
     while len(report_text) > 1900: # Leave some buffer
         # Find a good split point (newline)
         split_idx = report_text.rfind('\n', 0, 1900)
@@ -38,7 +49,7 @@ def send_discord_report(report_text):
         }
         
         try:
-            response = requests.post(url, json=payload, headers=headers)
+            response = requests.post(url_webhook, json=payload, headers=headers)
             response.raise_for_status()
         except Exception as e:
             print(f"Failed to send Discord notification: {e}")

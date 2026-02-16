@@ -107,9 +107,37 @@ def main():
         stock_report = reporter.generate_stock_report(sector_results)
         full_report += "\n" + stock_report
         
-        # 7. Notify Discord
+        # 7. Web Report & PIN (Phase 4)
+        import random
+        pin = str(random.randint(1000, 9999))
+        print(f"\nGenerated PIN: {pin}")
+        
+        html_content = reporter.generate_html(full_report, pin)
+        
+        with open("index.html", "w", encoding="utf-8") as f:
+            f.write(html_content)
+            
+        print("Generated index.html with PIN protection.")
+        
+        # Automate Deployment (Git Push)
+        import subprocess
+        try:
+            print("Deploying to GitHub Pages...")
+            subprocess.run(["git", "add", "index.html"], check=True)
+            subprocess.run(["git", "commit", "-m", f"Update report for {pd.Timestamp.now().date()}"], check=False) # Check=False in case nothing changed
+            subprocess.run(["git", "push"], check=True)
+            print("Deployment successful.")
+        except Exception as e:
+            print(f"Deployment failed: {e}")
+        
+        # 8. Notify Discord
         print("\nSending report to Discord...")
-        notifier.send_discord_report(full_report)
+        # GitHub Pages URL (Replace with actual user's URL if known, else usage guide says 'xzonisy.github.io/stock_watch_tower')
+        # Based on remote origin: https://github.com/xzonisy/stock_watch_tower
+        github_pages_url = "https://xzonisy.github.io/stock_watch_tower/"
+        
+        notifier.send_discord_report(full_report, pin=pin, url=github_pages_url)
+
 
         
     except Exception as e:
