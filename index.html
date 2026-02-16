@@ -1,0 +1,96 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Watch Tower - Weekly Report</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .container { background-color: #2d2d2d; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); max-width: 800px; width: 100%; }
+        h1 { text-align: center; color: #4caf50; }
+        #login-area { text-align: center; }
+        input { padding: 10px; font-size: 1.2rem; border-radius: 5px; border: 1px solid #444; background: #333; color: white; width: 150px; text-align: center; }
+        button { padding: 10px 20px; font-size: 1.2rem; border-radius: 5px; border: none; background-color: #4caf50; color: white; cursor: pointer; margin-left: 10px; }
+        button:hover { background-color: #45a049; }
+        #content-area { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; display: none; line-height: 1.5; }
+        .error { color: #ff5252; margin-top: 10px; display: none; }
+        pre { background: #111; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        .hidden-data { display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Weekly Analysis Report</h1>
+        
+        <div id="login-area">
+            <p>Please enter the 4-digit PIN from Discord to view the report.</p>
+            <input type="password" id="pin-input" maxlength="4" placeholder="PIN">
+            <button onclick="unlock()">Unlock</button>
+            <p class="error" id="error-msg">Incorrect PIN</p>
+        </div>
+
+        <div id="content-area"></div>
+    </div>
+    
+    <div id="encrypted-data" class="hidden-data">0Zy527eC0K+I1pe434+c17ym0amU1Y6ePQ4LDwoOCw8KDgsPCg4LDwoOCw8KDgsPCg4LDwoOCw8KDgsPCg4LDwo51Kel0aOi1aam0KKj1Ken0aOi1aam0KKX1Ken0aOi1aam0KKj1Ken0aOi1aaS0KKj1Ken0aOi1aam0KKj1Ken0aOi1aam0KKX1Ken0aOi1aam0KKj1Ken0aOi1aam0KKj1Ken0aOW1aam0KKj1Ken0aOi1aam0KKj1Ken0aOi1aam0KKmPNCjsRYSF9W4oNKjuxLVp7QS0a6J15a5FhIX0aKwFwffsobbl5rQvIgSFxPUprUTBwDes4falpvRvYkTFhLVp7QSFxMWYGTWvrTRpo4S1ae0ONWmqNCio9Snp9GjotWmptCio9Snp9GjmNWmptCio9Snp9GjotWmptCio9SnndGjotWmptCio9Snp9GjotWmptCio9Snp9GjmNWmptCio9Snp9GjotWmptCio9Snp9GjotWmptCimdSnp9GjotWmptCio9Snp9GjotWmptCio9Snp9Gjkz3RorAXExYSBhPUprUTbn5yExbQo7EWAwMdBwQSE9SmtRMEAxkAAxcXE9SmtRMWAhkCAQMCE9SmtTnUpqvRorLVp7bQo7PUprfRorLVp7bQo4/UprfRorLVp7bQo7PUprfRorLVp4rQo7PUprfRorLVp7bQo7PUprfRorLVp7bQo4/UprfRorLVp7bQo7PUprfRorLVp7bQo7PUprfRoo7Vp7bQo7PUprfRorLVp7bQo7PUprfRorLVp7bQo5c80KOxFhIXEwQS1ae0Em9/dBIX0aKwFwsYCg8WFhLVp7QSBQYYBgUWFhLVp7QSFwMYAwEGAxLVp7Q41aeq0KOz1Ka30aKy1ae20KOz1Ka30aKO1ae20KOz1Ka30aKy1ae20KOz1KaL0aKy1ae20KOz1Ka30aKy1ae20KOz1Ka30aKO1ae20KOz1Ka30aKy1ae20KOz1Ka30aKy1ae20KOP1Ka30aKy1ae20KOz1Ka30aKy1ae20KOz1Ka30aKWPdGisBcTFhIEE9SmtRNufmcTFtCjsRYKGQUBFxcT1Ka1EwcFGQYFFxcT1Ka1ExYCGQIEBxcT1Ka1OdSmq9GistWnttCjs9Smt9GistWnttCjj9Smt9GistWnttCjs9Smt9GistWnitCjs9Smt9GistWnttCjs9Smt9GistWnttCjj9Smt9GistWnttCjs9Smt9GistWnttCjs9Smt9GijtWnttCjs9Smt9GistWnttCjs9Smt9GistWnttCjlzzQo7EWEhcTAhLVp7QSb39/EhfRorAXBhgCARYWEtWntBIGBRgDBhYWEtWntBIXAxgCDgoOEtWntDjVp6rQo7PUprfRorLVp7bQo7PUprfRoo7Vp7bQo7PUprfRorLVp7bQo7PUpovRorLVp7bQo7PUprfRorLVp7bQo7PUprfRoo7Vp7bQo7PUprfRorLVp7bQo7PUprfRorLVp7bQo4/UprfRorLVp7bQo7PUprfRorLVp7bQo7PUprfRopY90aKwFxMWEgIT1Ka1E25+ZXYW0KOxFgYZAAQXFxPUprUTDhwGAxMSFxPUprUTFgIZAwMEBhPUprU51Kar0aKy1ae20KOz1Ka30aKy1ae20KOP1Ka30aKy1ae20KOz1Ka30aKy1aeK0KOz1Ka30aKy1ae20KOz1Ka30aKy1ae20KOP1Ka30aKy1ae20KOz1Ka30aKy1ae20KOz1Ka30aKO1ae20KOz1Ka30aKy1ae20KOz1Ka30aKy1ae20KOXPNCjsRYSFxMAEtWntBJvf2MSF9GisBcFGAQEFhYS1ae0EgMdAAASExYS1ae0EhcDGAICAwQS1ae0ONWnqtCjs9Smt9GistWnttCjs9Smt9GijtWnttCjs9Smt9GistWnttCjs9Smi9GistWnttCjs9Smt9GistWnttCjs9Smt9GijtWnttCjs9Smt9GistWnttCjs9Smt9GistWnttCjj9Smt9GistWnttCjs9Smt9GistWnttCjs9Smt9Gilj3RorAXExYSABPUprUTbn5hExbQo7EWAhkHAxcXE9SmtRMCHAQLExIXE9SmtRMWAhkDBwoGE9SmtTnUpqvRorLVp7bQo7PUprfRorLVp7bQo4/UprfRorLVp7bQo7PUprfRorLVp4rQo7PUprfRorLVp7bQo7PUprfRorLVp7bQo4/UprfRorLVp7bQo7PUprfRorLVp7bQo7PUprfRoo7Vp7bQo7PUprfRorLVp7bQo7PUprfRorLVp7bQo5c80KOxFhIXEw4S1ae0Em9/dRIX0aKwFx4HHAMDExLVp7QSBB0FCxITFhLVp7QSFwMYAgcADxLVp7Q41aeq0KOz1Ka30aKy1ae20KOz1Ka30aKO1ae20KOz1Ka30aKy1ae20KOz1KaL0aKy1ae20KOz1Ka30aKy1ae20KOz1Ka30aKO1ae20KOz1Ka30aKy1ae20KOz1Ka30aKy1ae20KOP1Ka30aKy1ae20KOz1Ka30aKy1ae20KOz1Ka30aKWPdGisBcTFhIOE9SmtRNufm4TFtCjsRYfAh0FAxIT1Ka1EwccAAoTEhcT1Ka1ExsCGQMEAQET1Ka1OdSmq9GistWnttCjs9Smt9GistWnttCjj9Smt9GistWnttCjs9Smt9GistWnitCjs9Smt9GistWnttCjs9Smt9GistWnttCjj9Smt9GistWnttCjs9Smt9GistWnttCjs9Smt9GijtWnttCjs9Smt9GistWnttCjs9Smt9GistWnttCjlzzQo7EWEhcCBhLVp7QSb39wEhfRorAXHgMcBwMTEtWntBIHHQEGEhMWEtWntBIaAxgCBQQFEtWntDjVp6rQo7PUprfRorLVp7bQo7PUprfRoo7Vp7bQo7PUprfRorLVp7bQo7PUpovRorLVp7bQo7PUprfRorLVp7bQo7PUprfRoo7Vp7bQo7PUprfRorLVp7bQo7PUprfRorLVp7bQo4/UprfRorLVp7bQo7PUprfRorLVp7bQo7PUprfRopY90aKwFxMWAwYT1Ka1E25+fBMW0KOxFh8DHQYEEhPUprUTGwMZBwIXFxPUprUTGwIZAwUBAhPUprU51Kev0aOi1aam0KKj1Ken0aOi1aam0KKU1Ken0aOi1aam0KKj1Ken0aOi1aaR0KKj1Ken0aOi1aam0KKj1Ken0aOi1aam0KKU1Ken0aOi1aam0KKj1Ken0aOi1aam0KKj1Ken0aOV1aam0KKj1Ken0aOi1aam0KKj1Ken0aOi1aam0KKoPDjSurvWj7rTorrciqjepKrUhJvTv7fWqa0XG3BdVEZFEnZBU1MeOdOMu9eOu9Kju92Lqd+ziA==</div>
+
+    <script>
+        function unlock() {
+            const pin = document.getElementById('pin-input').value;
+            const encryptedData = document.getElementById('encrypted-data').innerText;
+            const errorMsg = document.getElementById('error-msg');
+            
+            try {
+                const decryptedHTML = simple_decrypt(encryptedData, pin);
+                
+                // Simple validation check: Report usually starts with specific headers
+                if (decryptedHTML.includes("每週板塊輪動監測")) {
+                    document.getElementById('login-area').style.display = 'none';
+                    const contentArea = document.getElementById('content-area');
+                    contentArea.style.display = 'block';
+                    contentArea.innerHTML = '<pre>' + decryptedHTML + '</pre>';
+                    errorMsg.style.display = 'none';
+                } else {
+                    throw new Error("Decryption failed");
+                }
+            } catch (e) {
+                errorMsg.style.display = 'block';
+                console.error(e);
+            }
+        }
+
+        function simple_decrypt(base64Text, pin) {
+            // Decode Base64
+            const encryptedBytes = Uint8Array.from(atob(base64Text), c => c.charCodeAt(0));
+            
+            // Prepare Key Bytes
+            const encoder = new TextEncoder();
+            const pinBytes = encoder.encode(pin);
+            const keyBytes = new Uint8Array(encryptedBytes.length);
+            
+            for (let i = 0; i < encryptedBytes.length; i++) {
+                keyBytes[i] = pinBytes[i % pinBytes.length];
+            }
+            
+            // XOR Decrypt
+            const decryptedBytes = new Uint8Array(encryptedBytes.length);
+            for (let i = 0; i < encryptedBytes.length; i++) {
+                decryptedBytes[i] = encryptedBytes[i] ^ keyBytes[i];
+            }
+            
+            // Decode UTF-8
+            const decoder = new TextDecoder();
+            return decoder.decode(decryptedBytes);
+        }
+        
+        // Allow Enter key
+        document.getElementById('pin-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                unlock();
+            }
+        });
+    </script>
+</body>
+</html>
+    
