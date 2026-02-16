@@ -1,46 +1,56 @@
-name: Weekly Sector Report
+name: Weekly Sector Report & Deploy
 
 on:
   schedule:
-    # Run at 00:00 UTC on Saturday (8:00 AM Saturday Taipei Time)
-    # This captures the full week of trading (Monday - Friday US Time)
     - cron: '0 0 * * 6'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:
   push:
     branches: [ "main" ]
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: write  # Allow pushing to the repo
+  contents: write   # To push the generated HTML back to the repo
+  pages: write      # To deploy to Pages
+  id-token: write   # Verify the deployment originates from an appropriate source
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.9'
-          
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          
-      - name: Run Analysis
+
+      - name: Run Analysis & Generate Report
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           GITHUB_ACTIONS: true
         run: python main.py
-        
-      - name: Commit and Push Report
+
+      - name: Commit and Push Generated Files
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add index.html
+          git add index.html pages/
           # Check if there are changes before committing
           if git diff --staged --quiet; then
             echo "No changes to commit."
@@ -48,3 +58,14 @@ jobs:
             git commit -m "Update weekly report [skip ci]"
             git push
           fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository or specific folder
+          # Since index.html is in root and pages/ is in root, we upload '.'
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
