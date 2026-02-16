@@ -24,6 +24,24 @@ PERIODS = {
     "12w": 60   # Approx 12 trading weeks
 }
 
+# Sector Chinese Names
+SECTOR_NAMES = {
+    'XLK': '科技股 (Technology)',
+    'XLF': '金融股 (Financial)',
+    'XLV': '醫療保健 (Healthcare)',
+    'XLY': '非必需消費 (Consumer Discretionary)',
+    'XLP': '必需消費 (Consumer Staples)',
+    'XLE': '能源股 (Energy)',
+    'XLI': '工業股 (Industrial)',
+    'XLB': '原物料 (Materials)',
+    'XLU': '公用事業 (Utilities)',
+    'XLRE': '房地產 (Real Estate)',
+    'XLC': '通訊服務 (Communication Services)',
+    'SPY': '標普500 (S&P 500)',
+    'QQQ': '納斯達克100 (Nasdaq 100)'
+}
+
+
 # Top Holdings per Sector (Snapshot)
 SECTOR_HOLDINGS = {
     "XLK": ["MSFT", "AAPL", "NVDA", "AVGO", "ORCL", "ADBE", "CRM", "AMD", "QCOM", "TXN"],

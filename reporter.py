@@ -1,5 +1,10 @@
 from tabulate import tabulate
 from colorama import Fore, Style, init
+import config
+import pandas as pd
+import json
+import base64
+import os
 
 # Initialize colorama
 init()
@@ -213,7 +218,294 @@ def simple_encrypt(text, pin):
     # Return as base64 string for safe embedding in HTML
     return base64.b64encode(encrypted_bytes).decode('utf-8')
 
-def generate_html(report_text, pin):
+def generate_etf_detail_page(ticker, holdings_data, chinese_name):
+    """
+    Generates a detailed HTML page for a specific ETF.
+    """
+    
+    # Format holdings table rows
+    holdings_rows = ""
+    for h in holdings_data:
+        holdings_rows += f"<tr><td>{h['symbol']}</td><td>{h['name']}</td><td>{h['percent']:.2%}</td></tr>"
+        
+    html = f"""
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{ticker} - {chinese_name}</title>
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #e0e0e0; margin: 0; padding: 20px; }}
+        .container {{ max-width: 800px; margin: 0 auto; background-color: #2d2d2d; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+        h1 {{ color: #4caf50; border-bottom: 2px solid #444; padding-bottom: 10px; }}
+        .back-link {{ display: inline-block; margin-bottom: 20px; color: #64b5f6; text-decoration: none; font-size: 1.1em; }}
+        .back-link:hover {{ text-decoration: underline; }}
+        table {{ width: 100%; border-collapse: collapse; margin-top: 20px; }}
+        th, td {{ padding: 12px; text-align: left; border-bottom: 1px solid #444; }}
+        th {{ background-color: #333; color: #4caf50; }}
+        tr:hover {{ background-color: #383838; }}
+    </style>
+    <script>
+        // Check if user is authorized (simple session check)
+        if (!sessionStorage.getItem('unlocked')) {{
+            window.location.href = '../index.html';
+        }}
+    </script>
+</head>
+<body>
+    <div class="container">
+        <a href="../index.html" class="back-link">← Back to Main Report</a>
+        
+        <h1>{ticker} - {chinese_name}</h1>
+        
+        <h3>Top 10 Holdings</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Symbol</th>
+                    <th>Name</th>
+                    <th>% Assets</th>
+                </tr>
+            </thead>
+            <tbody>
+                {holdings_rows}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
+    """
+    return html
+
+def generate_html(report_text, pin, ranked_df=None, sector_results=None):
+    """
+    Generates a password-protected HTML file with Interactive DataTables.
+    """
+    
+    # Prepare structured data if available
+    sectors_data = []
+    if ranked_df is not None:
+        df = ranked_df.copy()
+        # Ensure Ticker is a column
+        if 'Sector' not in df.columns:
+            df = df.reset_index()
+            # Assuming first col is Ticker if not named Sector
+            if df.columns[0] != 'Sector':
+                df.rename(columns={df.columns[0]: 'Sector'}, inplace=True)
+                
+        for i, row in df.iterrows():
+            ticker = row['Sector']
+            chinese_name = config.SECTOR_NAMES.get(ticker, ticker)
+            sectors_data.append({
+                'rank': i + 1,
+                'ticker': ticker,
+                'name': chinese_name,
+                'perf_4w': row['4w'] if pd.notnull(row['4w']) else 0,
+                'perf_12w': row['12w'] if pd.notnull(row['12w']) else 0,
+                'score': row['Score']
+            })
+            
+    frontend_data = {
+        'sectors': sectors_data,
+        'report_text': report_text
+    }
+    
+    json_data = json.dumps(frontend_data)
+    encrypted_content = simple_encrypt(json_data, pin)
+    
+    html_template = f"""
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Watch Tower - Weekly Monitor</title>
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    
+    <style>
+        body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #e0e0e0; margin: 0; padding: 20px; }}
+        .container {{ max-width: 1000px; margin: 0 auto; background-color: #2d2d2d; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }}
+        h1 {{ text-align: center; color: #4caf50; }}
+        
+        /* Login Area */
+        #login-area {{ text-align: center; margin-top: 50px; }}
+        input {{ padding: 10px; font-size: 1.2rem; border-radius: 5px; border: 1px solid #444; background: #333; color: white; width: 150px; text-align: center; }}
+        button {{ padding: 10px 20px; font-size: 1.2rem; border-radius: 5px; border: none; background-color: #4caf50; color: white; cursor: pointer; margin-left: 10px; }}
+        button:hover {{ background-color: #45a049; }}
+        .error {{ color: #ff5252; margin-top: 10px; display: none; }}
+        
+        /* Content Area */
+        #content-area {{ display: none; }}
+        
+        /* Table Styles */
+        table.dataTable tbody tr {{ background-color: #2d2d2d; color: #e0e0e0; }}
+        table.dataTable tbody tr:hover {{ background-color: #383838; }}
+        table.dataTable thead th {{ border-bottom: 1px solid #444; color: #4caf50; }}
+        table.dataTable td {{ border-bottom: 1px solid #444; }}
+        
+        /* Links */
+        a {{ color: #64b5f6; text-decoration: none; font-weight: bold; }}
+        a:hover {{ text-decoration: underline; }}
+        
+        /* Utilities */
+        .hidden-data {{ display: none; }}
+        .metric-pos {{ color: #81c784; }}
+        .metric-neg {{ color: #e57373; }}
+    </style>
+    
+    <!-- jQuery & DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Weekly Sector Monitor</h1>
+        
+        <div id="login-area">
+            <p>Please enter the 4-digit PIN to unlock.</p>
+            <input type="password" id="pin-input" maxlength="4" placeholder="PIN" autofocus>
+            <button onclick="unlock()">Unlock</button>
+            <p class="error" id="error-msg">Incorrect PIN</p>
+        </div>
+
+        <div id="content-area">
+            <h3>板塊輪動排名 (Sector Rotation Ranking)</h3>
+            <table id="sector-table" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Ticker</th>
+                        <th>Name (Chinese)</th>
+                        <th>4-Week %</th>
+                        <th>12-Week %</th>
+                        <th>RS Score</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            
+            <hr style="margin: 30px 0; border-color: #444;">
+            
+            <h3>完整報告 (Full Report Text)</h3>
+            <pre id="raw-report" style="background: #111; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: Consolas;"></pre>
+        </div>
+    </div>
+    
+    <div id="encrypted-data" class="hidden-data">{encrypted_content}</div>
+
+    <script>
+        function unlock() {{
+            const pin = document.getElementById('pin-input').value;
+            const encryptedData = document.getElementById('encrypted-data').innerText;
+            const errorMsg = document.getElementById('error-msg');
+            
+            try {{
+                const decryptedJSON = simple_decrypt(encryptedData, pin);
+                const data = JSON.parse(decryptedJSON);
+                
+                // If parse successful, show content
+                document.getElementById('login-area').style.display = 'none';
+                document.getElementById('content-area').style.display = 'block';
+                
+                // Set session storage for detail pages
+                sessionStorage.setItem('unlocked', 'true');
+                
+                // Populate Raw Report
+                document.getElementById('raw-report').innerText = data.report_text;
+                
+                // Populate Table
+                const tableBody = document.querySelector('#sector-table tbody');
+                data.sectors.forEach(sector => {{
+                    const tr = document.createElement('tr');
+                    
+                    const p4Class = sector.perf_4w >= 0 ? 'metric-pos' : 'metric-neg';
+                    const p12Class = sector.perf_12w >= 0 ? 'metric-pos' : 'metric-neg';
+                    const scoreClass = sector.score > 0 ? 'metric-pos' : 'metric-neg';
+                    
+                    tr.innerHTML = `
+                        <td>${{sector.rank}}</td>
+                        <td><a href="pages/${{sector.ticker}}.html">${{sector.ticker}}</a></td>
+                        <td>${{sector.name}}</td>
+                        <td class="${{p4Class}}">${{(sector.perf_4w * 100).toFixed(2)}}%</td>
+                        <td class="${{p12Class}}">${{(sector.perf_12w * 100).toFixed(2)}}%</td>
+                        <td class="${{scoreClass}}"><strong>${{sector.score.toFixed(4)}}</strong></td>
+                    `;
+                    tableBody.appendChild(tr);
+                }});
+                
+                // Initialize DataTables
+                $('#sector-table').DataTable({{
+                    paging: false,
+                    searching: true,
+                    info: false,
+                    order: [[ 0, "asc" ]] // Sort by Rank by default
+                }});
+                
+                errorMsg.style.display = 'none';
+                
+            }} catch (e) {{
+                errorMsg.style.display = 'block';
+                console.error(e);
+            }}
+        }}
+
+        function simple_decrypt(base64Text, pin) {{
+            const encryptedBytes = Uint8Array.from(atob(base64Text), c => c.charCodeAt(0));
+            const encoder = new TextEncoder();
+            const pinBytes = encoder.encode(pin);
+            const keyBytes = new Uint8Array(encryptedBytes.length);
+            
+            for (let i = 0; i < encryptedBytes.length; i++) {{
+                keyBytes[i] = pinBytes[i % pinBytes.length];
+            }}
+            
+            const decryptedBytes = new Uint8Array(encryptedBytes.length);
+            for (let i = 0; i < encryptedBytes.length; i++) {{
+                decryptedBytes[i] = encryptedBytes[i] ^ keyBytes[i];
+            }}
+            
+            const decoder = new TextDecoder();
+            return decoder.decode(decryptedBytes);
+        }}
+        
+        // Auto-login via session
+        if (sessionStorage.getItem('unlocked')) {{
+             // We can't auto-decrypt because we don't store the PIN in session for security (or maybe we could?)
+             // Actually, if we want auto-show, we'd need the PIN. 
+             // Let's just focus on the 'Enter PIN' UX for now, it's safer.
+             // But we authorize detail pages if this main page was unlocked once? 
+             // The detail pages check sessionStorage. 
+             // But to view THIS page again, you need to decrypt data again.
+             // Unless we store the DECRYPTED key or PIN in sessionStorage.
+             // Let's store the PIN in sessionStorage temporarily for convenience.
+             const storedPin = sessionStorage.getItem('session_pin');
+             if (storedPin) {{
+                 document.getElementById('pin-input').value = storedPin;
+                 // Ideally trigger unlock automatically, but we need the DOM to be ready.
+                 // We'll let user click or hit enter, prepopulating is helpful enough.
+             }}
+        }}
+        
+        document.getElementById('pin-input').addEventListener('keypress', function (e) {{
+            if (e.key === 'Enter') {{
+                unlock();
+                sessionStorage.setItem('session_pin', document.getElementById('pin-input').value);
+            }}
+        }});
+        
+        // Also save pin on click
+        document.querySelector('button').addEventListener('click', function() {{
+             sessionStorage.setItem('session_pin', document.getElementById('pin-input').value);
+        }});
+    </script>
+</body>
+</html>
+    """
+    return html_template
     """
     Generates a password-protected HTML file.
     The content is encrypted with the PIN, so 'View Source' shows garbage.

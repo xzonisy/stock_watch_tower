@@ -108,12 +108,32 @@ def main():
         stock_report = reporter.generate_stock_report(sector_results)
         full_report += "\n" + stock_report
         
-        # 7. Web Report & PIN (Phase 4)
+        # 7. Web Report & PIN (Phase 4 & 6)
         import random
         pin = str(random.randint(1000, 9999))
         print(f"\nGenerated PIN: {pin}")
         
-        html_content = reporter.generate_html(full_report, pin)
+        # Generate ETF Detail Pages
+        print("Generating ETF detail pages...")
+        if not os.path.exists("pages"):
+            os.makedirs("pages")
+            
+        for ticker in ranked_sectors.index:
+             # Skip benchmarks if they are in ranked_sectors? 
+             # rank_sectors includes everything passed to it.
+             # config.SECTORS are the ones we care about mostly, but benchmarks are useful too.
+             # SECTOR_NAMES has them all.
+             try:
+                 print(f"  Processing {ticker}...")
+                 holdings = data_fetcher.fetch_etf_holdings(ticker)
+                 chinese_name = config.SECTOR_NAMES.get(ticker, ticker)
+                 page_html = reporter.generate_etf_detail_page(ticker, holdings, chinese_name)
+                 with open(f"pages/{ticker}.html", "w", encoding="utf-8") as f:
+                     f.write(page_html)
+             except Exception as e:
+                 print(f"Failed to generate page for {ticker}: {e}")
+
+        html_content = reporter.generate_html(full_report, pin, ranked_df=ranked_sectors, sector_results=sector_results)
         
         with open("index.html", "w", encoding="utf-8") as f:
             f.write(html_content)
@@ -130,7 +150,7 @@ def main():
             import subprocess
             try:
                 print("Deploying to GitHub Pages (Local mode)...")
-                subprocess.run(["git", "add", "index.html"], check=True)
+                subprocess.run(["git", "add", "index.html", "pages/"], check=True)
                 subprocess.run(["git", "commit", "-m", f"Update report for {pd.Timestamp.now().date()}"], check=False) # Check=False in case nothing changed
                 subprocess.run(["git", "push"], check=True)
                 print("Deployment successful.")
