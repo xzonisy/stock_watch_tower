@@ -24,18 +24,19 @@ def send_discord_report(report_text, pin=None, url=None):
     
     message_content += report_text
     
+    
     # Discord limit is 2000, we'll slice securely
     chunks = []
 
-    while len(report_text) > 1900: # Leave some buffer
+    while len(message_content) > 1900: # Leave some buffer
         # Find a good split point (newline)
-        split_idx = report_text.rfind('\n', 0, 1900)
+        split_idx = message_content.rfind('\n', 0, 1900)
         if split_idx == -1:
             split_idx = 1900
             
-        chunks.append(report_text[:split_idx])
-        report_text = report_text[split_idx:]
-    chunks.append(report_text)
+        chunks.append(message_content[:split_idx])
+        message_content = message_content[split_idx:]
+    chunks.append(message_content)
     
     print(f"Sending report to Discord ({len(chunks)} chunks)...")
     
