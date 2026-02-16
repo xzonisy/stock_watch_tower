@@ -86,9 +86,9 @@ def print_sector_ranking(ranked_df):
         # Color coding
         color = ""
         if rank <= 3:
-            color = Fore.GREEN
-        elif rank > len(df) - 3:
             color = Fore.RED
+        elif rank > len(df) - 3:
+            color = Fore.GREEN
             
         row_data = [
             f"{color}{rank}{Style.RESET_ALL}",
@@ -103,8 +103,8 @@ def print_sector_ranking(ranked_df):
     
     print(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
     
-    print("\n" + Fore.GREEN + "前三名：關注區域 (Focus Area)" + Style.RESET_ALL)
-    print(Fore.RED + "後三名：避免/黑名單 (Avoid/Blacklist)" + Style.RESET_ALL)
+    print("\n" + Fore.RED + "前三名：關注區域 (Focus Area)" + Style.RESET_ALL)
+    print(Fore.GREEN + "後三名：避免/黑名單 (Avoid/Blacklist)" + Style.RESET_ALL)
 
 def generate_stock_report(sector_results):
     """
@@ -352,8 +352,8 @@ def generate_html(report_text, pin, ranked_df=None, sector_results=None):
         
         /* Utilities */
         .hidden-data {{ display: none; }}
-        .metric-pos {{ color: #81c784; }}
-        .metric-neg {{ color: #e57373; }}
+        .metric-pos {{ color: #ff5252; }}
+        .metric-neg {{ color: #81c784; }}
     </style>
     
     <!-- jQuery & DataTables JS -->
