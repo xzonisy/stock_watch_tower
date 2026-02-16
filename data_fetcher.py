@@ -39,11 +39,20 @@ def fetch_etf_holdings(ticker):
             # Structure usually: Index=Symbol, Columns=['Name', 'Holding %']
             # We want to convert to list of dicts
             holdings = []
+            
+            # Use iloc to be safe about column names if position is consistent
+            # Or try to find the percent column
+            percent_col = next((c for c in holdings_df.columns if '%' in c or 'holding' in c.lower()), None)
+            name_col = next((c for c in holdings_df.columns if 'name' in c.lower()), None)
+            
             for symbol, row in holdings_df.iterrows():
+                name = row[name_col] if name_col else "Unknown"
+                percent = row[percent_col] if percent_col else 0
+                
                 holdings.append({
                     'symbol': symbol,
-                    'name': row['Name'],
-                    'percent': row['Holding %']
+                    'name': name,
+                    'percent': percent
                 })
             return holdings
         else:

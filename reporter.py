@@ -367,7 +367,7 @@ def generate_html(report_text, pin, ranked_df=None, sector_results=None):
         
         <div id="login-area">
             <p>Please enter the 4-digit PIN to unlock.</p>
-            <input type="password" id="pin-input" maxlength="4" placeholder="PIN" autofocus>
+            <input type="password" id="pin-input" maxlength="4" placeholder="PIN" inputmode="numeric" pattern="[0-9]*" autofocus>
             <button onclick="unlock()">Unlock</button>
             <p class="error" id="error-msg">Incorrect PIN</p>
         </div>
