@@ -6,6 +6,8 @@ on:
     # This captures the full week of trading (Monday - Friday US Time)
     - cron: '0 0 * * 6'
   workflow_dispatch:  # Allow manual trigger
+  push:
+    branches: [ "main" ]
 
 permissions:
   contents: write  # Allow pushing to the repo
