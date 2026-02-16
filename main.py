@@ -5,6 +5,8 @@ import reporter
 import sys
 import pandas as pd # Added for type checking logic
 
+import notifier # Add import
+
 def main():
     try:
         # 1. Define Tickers
@@ -45,6 +47,9 @@ def main():
         
         # 5. Report
         reporter.print_sector_ranking(ranked_sectors)
+        
+        # Collect report for Discord
+        full_report = reporter.generate_sector_report(ranked_sectors)
         
         # 6. Drill Down (Phase 2)
         # Get Top 3 Sectors
@@ -97,6 +102,15 @@ def main():
             sector_results[sector] = sector_res
             
         reporter.print_stock_analysis(sector_results)
+        
+        # Append stock report to Discord message
+        stock_report = reporter.generate_stock_report(sector_results)
+        full_report += "\n" + stock_report
+        
+        # 7. Notify Discord
+        print("\nSending report to Discord...")
+        notifier.send_discord_report(full_report)
+
         
     except Exception as e:
         print(f"An error occurred: {e}")

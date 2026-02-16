@@ -38,3 +38,12 @@ SECTOR_HOLDINGS = {
     "XLB": ["LIN", "SHW", "FCX", "APD", "ECL", "NEM", "DOW", "CTVA", "ALB", "PPG"],
     "XLU": ["NEE", "SO", "DUK", "SRE", "AEP", "D", "PEG", "ED", "EXC", "PCG"]
 }
+
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Discord Webhook URL
+DISCORD_WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK_URL")

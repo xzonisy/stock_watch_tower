@@ -1,6 +1,6 @@
-# 每週板塊輪動監測 (Weekly Sector Rotation Monitor) 使用指南
+# 每週板塊輪動監測 (Weekly Sector Rotation Monitor)
 
-我已經實作了一個 Python 腳本來監測美股板塊 ETF ($XLK, $XLF 等)，根據過去 4 週和 12 週相對於 $SPY 和 $QQQ 的表現進行排名。
+這是一個 Python 腳本，用於監測美股板塊 ETF ($XLK, $XLF 等)，根據過去 4 週和 12 週相對於 $SPY 和 $QQQ 的表現進行排名。
 
 ## 安裝設定 (Setup)
 
@@ -9,7 +9,11 @@
     pip install -r requirements.txt
     ```
 
-2.  **設定 (Configuration)**：您可以修改 `config.py` 來新增/移除板塊或調整分析週期。
+2.  **設定 (Configuration)**：
+    *   修改 `config.py` 來新增/移除板塊或調整分析週期。
+    *   **Discord 通知 (可選)**：
+        1.  在專案根目錄建立一個 `.env` 檔案。
+        2.  加入您的 Webhook URL： `DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...`
 
 ## 執行監測 (Running the Monitor)
 
