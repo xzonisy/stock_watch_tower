@@ -4,36 +4,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Watch Tower - Weekly Report</title>
+    <title>Stock Watch Tower - Weekly Monitor</title>
+    
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #e0e0e0; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background-color: #2d2d2d; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); max-width: 800px; width: 100%; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e1e; color: #e0e0e0; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; background-color: #2d2d2d; padding: 2rem; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
         h1 { text-align: center; color: #4caf50; }
-        #login-area { text-align: center; }
+        
+        /* Login Area */
+        #login-area { text-align: center; margin-top: 50px; }
         input { padding: 10px; font-size: 1.2rem; border-radius: 5px; border: 1px solid #444; background: #333; color: white; width: 150px; text-align: center; }
         button { padding: 10px 20px; font-size: 1.2rem; border-radius: 5px; border: none; background-color: #4caf50; color: white; cursor: pointer; margin-left: 10px; }
         button:hover { background-color: #45a049; }
-        #content-area { white-space: pre-wrap; font-family: 'Consolas', 'Courier New', monospace; display: none; line-height: 1.5; }
         .error { color: #ff5252; margin-top: 10px; display: none; }
-        pre { background: #111; padding: 15px; border-radius: 5px; overflow-x: auto; }
+        
+        /* Content Area */
+        #content-area { display: none; }
+        
+        /* Table Styles */
+        table.dataTable tbody tr { background-color: #2d2d2d; color: #e0e0e0; }
+        table.dataTable tbody tr:hover { background-color: #383838; }
+        table.dataTable thead th { border-bottom: 1px solid #444; color: #4caf50; }
+        table.dataTable td { border-bottom: 1px solid #444; }
+        
+        /* Links */
+        a { color: #64b5f6; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+        
+        /* Utilities */
         .hidden-data { display: none; }
+        .metric-pos { color: #81c784; }
+        .metric-neg { color: #e57373; }
     </style>
+    
+    <!-- jQuery & DataTables JS -->
+    <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    
 </head>
 <body>
     <div class="container">
-        <h1>🔐 Weekly Analysis Report</h1>
+        <h1>🔐 Weekly Sector Monitor</h1>
         
         <div id="login-area">
-            <p>Please enter the 4-digit PIN from Discord to view the report.</p>
-            <input type="password" id="pin-input" maxlength="4" placeholder="PIN">
+            <p>Please enter the 4-digit PIN to unlock.</p>
+            <input type="password" id="pin-input" maxlength="4" placeholder="PIN" autofocus>
             <button onclick="unlock()">Unlock</button>
             <p class="error" id="error-msg">Incorrect PIN</p>
         </div>
 
-        <div id="content-area"></div>
+        <div id="content-area">
+            <h3>板塊輪動排名 (Sector Rotation Ranking)</h3>
+            <table id="sector-table" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Ticker</th>
+                        <th>Name (Chinese)</th>
+                        <th>4-Week %</th>
+                        <th>12-Week %</th>
+                        <th>RS Score</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            
+            <hr style="margin: 30px 0; border-color: #444;">
+            
+            <h3>完整報告 (Full Report Text)</h3>
+            <pre id="raw-report" style="background: #111; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: Consolas;"></pre>
+        </div>
     </div>
     
-    <div id="encrypted-data" class="hidden-data">1Jy53rKC0KqN1pe92o+c0rmm0ayR1Y6bOA4LCg8OCwoPDgsKDw4LCg8OCwoPDgsKDw4LCg8OCwoPDgsKDw4LCg851KKg0aOn0Kam1aej1KKi0aOn0Kam1aeX1KKi0aOn0Kam1aej1KKi0aOn0KaS1aej1KKi0aOn0Kam1aej1KKi0aOn0Kam1aeX1KKi0aOn0Kam1aej1KKi0aOn0Kam1aej1KKi0aOT0Kam1aej1KKi0aOn0Kam1aej1KKi0aOn0Kam1aemPNWmsRYXEtW4pdejuxfQp7QX1K6J0pO5FhcS0aK1Egfft4Pbl5/VvIgXEhPUo7ATBwXbs4ffk5vRuIwTFhfQp7QXEhMWZWHWvrHUpo4X0Ke0PdCmqNWno9SiotGjp9CmptWno9SiotGjndCmptWno9SiotGjp9CmptWno9SimNGjp9CmptWno9SiotGjp9CmptWno9SiotGjndCmptWno9SiotGjp9CmptWno9SiotGjp9CmptWnmdSiotGjp9CmptWno9SiotGjp9CmptWno9SiotGjljjRorUSExYXAxPUo7ATbnt3ExbVprEWBgYdBwEXE9SjsBMEBhwAAxISE9SjsBMWBxwCAQYHE9SjsDnUo67RorfQp7bVprPUo7LRorfQp7bVpo/Uo7LRorfQp7bVprPUo7LRorfQp4rVprPUo7LRorfQp7bVprPUo7LRorfQp7bVpo/Uo7LRorfQp7bVprPUo7LRorfQp7bVprPUo7LRoovQp7bVprPUo7LRorfQp7bVprPUo7LRorfQp7bVppc81aaxFhcSEwQX0Ke0F2p/dBcS0aK1EgsYDwoWFhfQp7QXAAYYAwAWFhfQp7QXEgMYBgQGAxfQp7Q90Keq1aaz1KOy0aK30Ke21aaz1KOy0aKL0Ke21aaz1KOy0aK30Ke21aaz1KOO0aK30Ke21aaz1KOy0aK30Ke21aaz1KOy0aKL0Ke21aaz1KOy0aK30Ke21aaz1KOy0aK30Ke21aaP1KOy0aK30Ke21aaz1KOy0aK30Ke21aaz1KOy0aKTONGitRITFhcBE9SjsBNue2ITFtWmsRYPHAUBEhIT1KOwEwcAHAYFEhIT1KOwExYHHAIEAhIT1KOwOdSjrtGit9CnttWms9SjstGit9CnttWmj9SjstGit9CnttWms9SjstGit9CnitWms9SjstGit9CnttWms9SjstGit9CnttWmj9SjstGit9CnttWms9SjstGit9CnttWms9SjstGii9CnttWms9SjstGit9CnttWms9SjstGit9CnttWmlzzVprEWFxITAhfQp7QXan9/FxLRorUSBhgHBBYWF9CntBcDBRgGAxYWF9CntBcSAxgHCwoOF9CntD3Qp6rVprPUo7LRorfQp7bVprPUo7LRoovQp7bVprPUo7LRorfQp7bVprPUo47RorfQp7bVprPUo7LRorfQp7bVprPUo7LRoovQp7bVprPUo7LRorfQp7bVprPUo7LRorfQp7bVpo/Uo7LRorfQp7bVprPUo7LRorfQp7bVprPUo7LRopM40aK1EhMWFwcT1KOwE257YHYW1aaxFgMcAAQSEhPUo7ATDhkDAxMXEhPUo7ATFgccAwMBAxPUo7A51KOu0aK30Ke21aaz1KOy0aK30Ke21aaP1KOy0aK30Ke21aaz1KOy0aK30KeK1aaz1KOy0aK30Ke21aaz1KOy0aK30Ke21aaP1KOy0aK30Ke21aaz1KOy0aK30Ke21aaz1KOy0aKL0Ke21aaz1KOy0aK30Ke21aaz1KOy0aK30Ke21aaXPNWmsRYXEhMAF9CntBdqf2MXEtGitRIFGAEBFhYX0Ke0FwYdAAUXExYX0Ke0FxIDGAcHAwQX0Ke0PdCnqtWms9SjstGit9CnttWms9SjstGii9CnttWms9SjstGit9CnttWms9SjjtGit9CnttWms9SjstGit9CnttWms9SjstGii9CnttWms9SjstGit9CnttWms9SjstGit9CnttWmj9SjstGit9CnttWms9SjstGit9CnttWms9SjstGikzjRorUSExYXBRPUo7ATbntkExbVprEWBxwHAxISE9SjsBMCGQELExcSE9SjsBMWBxwDBw8DE9SjsDnUo67RorfQp7bVprPUo7LRorfQp7bVpo/Uo7LRorfQp7bVprPUo7LRorfQp4rVprPUo7LRorfQp7bVprPUo7LRorfQp7bVpo/Uo7LRorfQp7bVprPUo7LRorfQp7bVprPUo7LRoovQp7bVprPUo7LRorfQp7bVprPUo7LRorfQp7bVppc81aaxFhcSEw4X0Ke0F2p/dRcS0aK1Eh4HGQYDExfQp7QXAR0FDhcTFhfQp7QXEgMYBwIADxfQp7Q90Keq1aaz1KOy0aK30Ke21aaz1KOy0aKL0Ke21aaz1KOy0aK30Ke21aaz1KOO0aK30Ke21aaz1KOy0aK30Ke21aaz1KOy0aKL0Ke21aaz1KOy0aK30Ke21aaz1KOy0aK30Ke21aaP1KOy0aK30Ke21aaz1KOy0aK30Ke21aaz1KOy0aKTONGitRITFhcLE9SjsBNue2sTFtWmsRYaBx0FBhcT1KOwEwcZBQoTFxIT1KOwExsHHAMEBAQT1KOwOdSjrtGit9CnttWms9SjstGit9CnttWmj9SjstGit9CnttWms9SjstGit9CnitWms9SjstGit9CnttWms9SjstGit9CnttWmj9SjstGit9CnttWms9SjstGit9CnttWms9SjstGii9CnttWms9SjstGit9CnttWms9SjstGit9CnttWmlzzVprEWFxICBhfQp7QXan9wFxLRorUSHgMZAgMTF9CntBcCHQEDFxMWF9CntBcfAxgHAAQFF9CntD3Qp6rVprPUo7LRorfQp7bVprPUo7LRoovQp7bVprPUo7LRorfQp7bVprPUo47RorfQp7bVprPUo7LRorfQp7bVprPUo7LRoovQp7bVprPUo7LRorfQp7bVprPUo7LRorfQp7bVpo/Uo7LRorfQp7bVprPUo7LRorfQp7bVprPUo7LRopM40aK1EhMWBgMT1KOwE257eRMW1aaxFhoGHQYBFxPUo7ATGwYcBwISEhPUo7ATGwccAwUEBxPUo7A51KKq0aOn0Kam1aej1KKi0aOn0Kam1aeU1KKi0aOn0Kam1aej1KKi0aOn0KaR1aej1KKi0aOn0Kam1aej1KKi0aOn0Kam1aeU1KKi0aOn0Kam1aej1KKi0aOn0Kam1aej1KKi0aOQ0Kam1aej1KKi0aOn0Kam1aej1KKi0aOn0Kam1aeoPD3XurvTirrTp7/ciq3bpKrRgZvTurLWqagSG3BYUUZFF3NBU1YbOdOJvteOvteju9iOqd+2jQ==</div>
+    <div id="encrypted-data" class="hidden-data">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Fw0VE2lCAghRBmlEAwUNAWlCDQFUBhUZYVJWWVtYWV5SThwTGRcXQVBFU24BQBcLFRoFHwUDBQQDBgUFBQcGAAcOBgkGAhkRF0dQQ1NoBANCFQ8RGAcbAQQDAQUGBgMBDAIHBgYEDAkZFxdCVlhHVBcNFRwFGQUCBgIEBwECAAgBBwUGDAECTGgbFRNHUkVeR0NqRVBPQRMPFxdtQAFXUlNrQAgFBARtQAECBlNrQAQNA1RtQA9TA1RrQAQHUwBtQAADVAZrQAdQBVZtWwoIDAgKCAwICggMCAoIDAgKCAwICggMCAoIDAgKCAwICggMCAoIDAhrW21ABQAEB2tAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwABAW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAHAWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwABAW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwABAW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACAG1ba0ADAAcHERUXaUQDBAwDaUIABQVTFW1ABQABBxdpRAMAAldpQgAJAVYVERVrQAMABwcRAWtACAUEBG1ADw0HDWtABgZRUBEVF2lEBwIFAxUGB21ADgUCBGtACQ0BDW1AAAZXUBcVEWlCBwQFBRURFRdnYmlCAAMFAWlEAwICCRVrQAMABwdtW2tAAwACUG1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAHVGtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwABVG1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAHVGtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAHVGtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAHBGtbbUAFAAEHFxURFQYVbUAFAAEHF219cBcVbUAFAAEHFwQFGwYDFBVrQAMABwcRBwYbAgASFRFpQgcEBQUVEQUZBAYEAhVtQAUAAQdrW21ABQAAVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAFAW1ba0ADAAcHERUXFQMVa0ADAAcHEW17dxEVa0ADAAcHEQ0ZDQkQFxVtQAUAAQcXBwQbAwcUFRdpRAcCBQMVFwUfBAEABBVrQAMABwdtW2tAAwAGVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQADAWtbbUAFAAEHFxURFQQVbUAFAAEHF219ZRcVbUAFAAEHFw0fAwAQERVrQAMABwcRBAAbBAYSFRFpQgcEBQUVEQUZBAMAFxVtQAUAAQdrW21ABQAAVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAFAW1ba0ADAAcHERUXFQUVa0ADAAcHEW17fBEVa0ADAAcHEQAZBQcQFxVtQAUAAQcXBAcbBgQUFRdpRAcCBQMVFwUfBQ4MCRVrQAMABwdtW2tAAwAGVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQADAWtbbUAFAAEHFxURFQIVbUAFAAEHF219Z3IVbUAFAAEHFwEfBgUQERVrQAMABwcRDRkEARAXFRFpQgcEBQUVEQUZBQQDBhVtQAUAAQdrW21ABQAAVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAFAW1ba0ADAAcHERUXFQcVa0ADAAcHEW17YBEVa0ADAAcHEQMZAwIQFxVtQAUAAQcXAR8DBRARFRdpRAcCBQMVFwUfBQIFAxVrQAMABwdtW2tAAwAGVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQADAWtbbUAFAAEHFxURFQAVbUAFAAEHF219YxcVbUAFAAEHFwUfAQIQERVrQAMABwcRARkGCRAXFRFpQgcEBQUVEQUZBQANBhVtQAUAAQdrW21ABQAAVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAFAW1ba0ADAAcHERUXFQkVa0ADAAcHEW17dhEVa0ADAAcHERgGGwUFEhVtQAUAAQcXBh8GDhARFRdpRAcCBQMVFwUfBQcGCBVrQAMABwdtW2tAAwAGVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQADAWtbbUAFAAEHFxURFQ4VbUAFAAEHF219bBcVbUAFAAEHFxgEGwQEFBVrQAMABwcRBBkCCBAXFRFpQgcEBQUVHAUZBQMGARVtQAUAAQdrW21ABQAAVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAFAW1ba0ADAAcHERUXBAEVa0ADAAcHEW17cxEVa0ADAAcHERgCGwEFEhVtQAUAAQcXBR8CAxARFRdpRAcCBQMVGgUfBQUCAhVrQAMABwdtW2tAAwAGVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAEVm1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQACVmtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQABBWtAAwAHBW1ABQADAWtbbUAFAAEHFxURBAYVbUAFAAEHF219fhcVbUAFAAEHFxgFGwcDFBVrQAMABwcRGAYbBQESFRFpQgcEBQUVHAUZBQIGAhVtQAUAAQdrW21ABQAEDWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwABAm1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAEBWtAAwACBW1ABQAH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</div>
 
     <script>
         function unlock() {
@@ -42,18 +88,49 @@
             const errorMsg = document.getElementById('error-msg');
             
             try {
-                const decryptedHTML = simple_decrypt(encryptedData, pin);
+                const decryptedJSON = simple_decrypt(encryptedData, pin);
+                const data = JSON.parse(decryptedJSON);
                 
-                // Simple validation check: Report usually starts with specific headers
-                if (decryptedHTML.includes("每週板塊輪動監測")) {
-                    document.getElementById('login-area').style.display = 'none';
-                    const contentArea = document.getElementById('content-area');
-                    contentArea.style.display = 'block';
-                    contentArea.innerHTML = '<pre>' + decryptedHTML + '</pre>';
-                    errorMsg.style.display = 'none';
-                } else {
-                    throw new Error("Decryption failed");
-                }
+                // If parse successful, show content
+                document.getElementById('login-area').style.display = 'none';
+                document.getElementById('content-area').style.display = 'block';
+                
+                // Set session storage for detail pages
+                sessionStorage.setItem('unlocked', 'true');
+                
+                // Populate Raw Report
+                document.getElementById('raw-report').innerText = data.report_text;
+                
+                // Populate Table
+                const tableBody = document.querySelector('#sector-table tbody');
+                data.sectors.forEach(sector => {
+                    const tr = document.createElement('tr');
+                    
+                    const p4Class = sector.perf_4w >= 0 ? 'metric-pos' : 'metric-neg';
+                    const p12Class = sector.perf_12w >= 0 ? 'metric-pos' : 'metric-neg';
+                    const scoreClass = sector.score > 0 ? 'metric-pos' : 'metric-neg';
+                    
+                    tr.innerHTML = `
+                        <td>${sector.rank}</td>
+                        <td><a href="pages/${sector.ticker}.html">${sector.ticker}</a></td>
+                        <td>${sector.name}</td>
+                        <td class="${p4Class}">${(sector.perf_4w * 100).toFixed(2)}%</td>
+                        <td class="${p12Class}">${(sector.perf_12w * 100).toFixed(2)}%</td>
+                        <td class="${scoreClass}"><strong>${sector.score.toFixed(4)}</strong></td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+                
+                // Initialize DataTables
+                $('#sector-table').DataTable({
+                    paging: false,
+                    searching: true,
+                    info: false,
+                    order: [[ 0, "asc" ]] // Sort by Rank by default
+                });
+                
+                errorMsg.style.display = 'none';
+                
             } catch (e) {
                 errorMsg.style.display = 'block';
                 console.error(e);
@@ -61,10 +138,7 @@
         }
 
         function simple_decrypt(base64Text, pin) {
-            // Decode Base64
             const encryptedBytes = Uint8Array.from(atob(base64Text), c => c.charCodeAt(0));
-            
-            // Prepare Key Bytes
             const encoder = new TextEncoder();
             const pinBytes = encoder.encode(pin);
             const keyBytes = new Uint8Array(encryptedBytes.length);
@@ -73,22 +147,43 @@
                 keyBytes[i] = pinBytes[i % pinBytes.length];
             }
             
-            // XOR Decrypt
             const decryptedBytes = new Uint8Array(encryptedBytes.length);
             for (let i = 0; i < encryptedBytes.length; i++) {
                 decryptedBytes[i] = encryptedBytes[i] ^ keyBytes[i];
             }
             
-            // Decode UTF-8
             const decoder = new TextDecoder();
             return decoder.decode(decryptedBytes);
         }
         
-        // Allow Enter key
+        // Auto-login via session
+        if (sessionStorage.getItem('unlocked')) {
+             // We can't auto-decrypt because we don't store the PIN in session for security (or maybe we could?)
+             // Actually, if we want auto-show, we'd need the PIN. 
+             // Let's just focus on the 'Enter PIN' UX for now, it's safer.
+             // But we authorize detail pages if this main page was unlocked once? 
+             // The detail pages check sessionStorage. 
+             // But to view THIS page again, you need to decrypt data again.
+             // Unless we store the DECRYPTED key or PIN in sessionStorage.
+             // Let's store the PIN in sessionStorage temporarily for convenience.
+             const storedPin = sessionStorage.getItem('session_pin');
+             if (storedPin) {
+                 document.getElementById('pin-input').value = storedPin;
+                 // Ideally trigger unlock automatically, but we need the DOM to be ready.
+                 // We'll let user click or hit enter, prepopulating is helpful enough.
+             }
+        }
+        
         document.getElementById('pin-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 unlock();
+                sessionStorage.setItem('session_pin', document.getElementById('pin-input').value);
             }
+        });
+        
+        // Also save pin on click
+        document.querySelector('button').addEventListener('click', function() {
+             sessionStorage.setItem('session_pin', document.getElementById('pin-input').value);
         });
     </script>
 </body>
