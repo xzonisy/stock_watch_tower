@@ -20,6 +20,14 @@
         2.  在 **Build and deployment** 下的 **Source** 選擇 **Deploy from a branch**。
         3.  在 **Branch** 選擇 **main** 以及 **/(root)**，然後點擊 **Save**。
         4.  等待幾分鐘，GitHub 會顯示您的網頁連結 (例如 `https://xzonisy.github.io/stock_watch_tower/`)。
+    *   **啟用 GitHub Actions 自動化 (重要)**：
+        1.  進入 GitHub 專案頁面 > **Settings** > **Secrets and variables** > **Actions**。
+        2.  點擊 **New repository secret**。
+        3.  **Name** 輸入 `DISCORD_WEBHOOK_URL`。
+        4.  **Secret** 輸入您的 Discord Webhook URL。
+        5.  點擊 **Add secret**。
+        6.  現在系統會在每週六早上自動執行並更新網頁報告。
+
 
 
 ## 執行監測 (Running the Monitor)

@@ -3,6 +3,7 @@ import data_fetcher
 import analyzer
 import reporter
 import sys
+import os # Added for env var check
 import pandas as pd # Added for type checking logic
 
 import notifier # Add import
@@ -120,15 +121,24 @@ def main():
         print("Generated index.html with PIN protection.")
         
         # Automate Deployment (Git Push)
-        import subprocess
-        try:
-            print("Deploying to GitHub Pages...")
-            subprocess.run(["git", "add", "index.html"], check=True)
-            subprocess.run(["git", "commit", "-m", f"Update report for {pd.Timestamp.now().date()}"], check=False) # Check=False in case nothing changed
-            subprocess.run(["git", "push"], check=True)
-            print("Deployment successful.")
-        except Exception as e:
-            print(f"Deployment failed: {e}")
+        # Only run this if NOT in GitHub Actions (or if configured to do so explicitly)
+        # In GitHub Actions, we might want to let the workflow handle the push to avoid auth issues or conflicts,
+        # OR we can do it here if we set up the remote correctly.
+        # But typically, workflows use a specific step for pushing.
+        
+        if not os.getenv("GITHUB_ACTIONS"):
+            import subprocess
+            try:
+                print("Deploying to GitHub Pages (Local mode)...")
+                subprocess.run(["git", "add", "index.html"], check=True)
+                subprocess.run(["git", "commit", "-m", f"Update report for {pd.Timestamp.now().date()}"], check=False) # Check=False in case nothing changed
+                subprocess.run(["git", "push"], check=True)
+                print("Deployment successful.")
+            except Exception as e:
+                print(f"Deployment failed: {e}")
+        else:
+            print("Running in GitHub Actions. Skipping internal git push (Workflow will handle it).")
+
         
         # 8. Notify Discord
         print("\nSending report to Discord...")
