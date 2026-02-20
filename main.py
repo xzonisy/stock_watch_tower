@@ -118,14 +118,14 @@ def main():
         if not os.path.exists("pages"):
             os.makedirs("pages")
             
-        for ticker in ranked_sectors.index:
-             # Skip benchmarks if they are in ranked_sectors? 
-             # rank_sectors includes everything passed to it.
-             # config.SECTORS are the ones we care about mostly, but benchmarks are useful too.
-             # SECTOR_NAMES has them all.
+        # Parallel fetch
+        etf_tickers = ranked_sectors.index.tolist()
+        all_holdings = data_fetcher.fetch_all_etf_holdings(etf_tickers)
+            
+        for ticker, holdings in all_holdings.items():
              try:
                  print(f"  Processing {ticker}...")
-                 holdings = data_fetcher.fetch_etf_holdings(ticker)
+                 # holdings already fetched
                  chinese_name = config.SECTOR_NAMES.get(ticker, ticker)
                  page_html = reporter.generate_etf_detail_page(ticker, holdings, chinese_name)
                  with open(f"pages/{ticker}.html", "w", encoding="utf-8") as f:

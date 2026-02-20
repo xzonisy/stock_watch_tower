@@ -320,7 +320,7 @@ def generate_html(report_text, pin, ranked_df=None, sector_results=None):
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stock Watch Tower - Weekly Monitor</title>
+    <title>Stock Watch Tower - 每週板塊監測 report</title>
     
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
@@ -341,6 +341,7 @@ def generate_html(report_text, pin, ranked_df=None, sector_results=None):
         #content-area {{ display: none; }}
         
         /* Table Styles */
+        .table-container {{ overflow-x: auto; -webkit-overflow-scrolling: touch; }}
         table.dataTable tbody tr {{ background-color: #2d2d2d; color: #e0e0e0; }}
         table.dataTable tbody tr:hover {{ background-color: #383838; }}
         table.dataTable thead th {{ border-bottom: 1px solid #444; color: #4caf50; }}
@@ -354,43 +355,55 @@ def generate_html(report_text, pin, ranked_df=None, sector_results=None):
         .hidden-data {{ display: none; }}
         .metric-pos {{ color: #ff5252; }}
         .metric-neg {{ color: #81c784; }}
+        
+        /* Chart container */
+        .chart-container {{ position: relative; height: 400px; width: 100%; margin-bottom: 30px; }}
     </style>
     
     <!-- jQuery & DataTables JS -->
     <script src="https://code.jquery.com/jquery-3.7.0.js"></script>
     <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
 </head>
 <body>
     <div class="container">
-        <h1>🔐 Weekly Sector Monitor</h1>
+        <h1>🔐 每週板塊輪動監測</h1>
         
         <div id="login-area">
-            <p>Please enter the 4-digit PIN to unlock.</p>
+            <p>請輸入 4 位數 PIN 碼以解鎖報告。</p>
             <input type="password" id="pin-input" maxlength="4" placeholder="PIN" inputmode="numeric" pattern="[0-9]*" autofocus>
-            <button onclick="unlock()">Unlock</button>
-            <p class="error" id="error-msg">Incorrect PIN</p>
+            <button onclick="unlock()">解鎖</button>
+            <p class="error" id="error-msg">PIN 碼錯誤</p>
         </div>
 
         <div id="content-area">
-            <h3>板塊輪動排名 (Sector Rotation Ranking)</h3>
-            <table id="sector-table" class="display" style="width:100%">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Ticker</th>
-                        <th>Name (Chinese)</th>
-                        <th>4-Week %</th>
-                        <th>12-Week %</th>
-                        <th>RS Score</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
+            <h3>📊 板塊表現概覽 (Sector Performance)</h3>
+            <div class="chart-container">
+                <canvas id="perfChart"></canvas>
+            </div>
+            
+            <h3>📋 板塊輪動排名 (Rotation Ranking)</h3>
+            <div class="table-container">
+                <table id="sector-table" class="display" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>代碼</th>
+                            <th>名稱</th>
+                            <th>4週表現</th>
+                            <th>12週表現</th>
+                            <th>RS 分數</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
             
             <hr style="margin: 30px 0; border-color: #444;">
             
-            <h3>完整報告 (Full Report Text)</h3>
+            <h3>📝 完整文字報告 (Detailed Report)</h3>
             <pre id="raw-report" style="background: #111; padding: 15px; border-radius: 5px; overflow-x: auto; font-family: Consolas;"></pre>
         </div>
     </div>
@@ -445,6 +458,9 @@ def generate_html(report_text, pin, ranked_df=None, sector_results=None):
                     order: [[ 0, "asc" ]] // Sort by Rank by default
                 }});
                 
+                // Render Chart
+                renderChart(data.sectors);
+                
                 errorMsg.style.display = 'none';
                 
             }} catch (e) {{
@@ -472,21 +488,63 @@ def generate_html(report_text, pin, ranked_df=None, sector_results=None):
             return decoder.decode(decryptedBytes);
         }}
         
+        function renderChart(sectors) {{
+            // Sort by RS Score descending for chart visual
+            // const sortedSectors = [...sectors].sort((a, b) => b.score - a.score); # Already sorted by rank
+            const tags = sectors.map(s => s.ticker);
+            const perf4w = sectors.map(s => s.perf_4w * 100);
+            const perf12w = sectors.map(s => s.perf_12w * 100);
+            
+            const ctx = document.getElementById('perfChart').getContext('2d');
+            new Chart(ctx, {{
+                type: 'bar',
+                data: {{
+                    labels: tags,
+                    datasets: [
+                        {{
+                            label: '4週表現 %',
+                            data: perf4w,
+                            backgroundColor: 'rgba(255, 82, 82, 0.7)',
+                            borderColor: 'rgba(255, 82, 82, 1)',
+                            borderWidth: 1
+                        }},
+                        {{
+                            label: '12週表現 %',
+                            data: perf12w,
+                            backgroundColor: 'rgba(76, 175, 80, 0.7)',
+                            borderColor: 'rgba(76, 175, 80, 1)',
+                            borderWidth: 1
+                        }}
+                    ]
+                }},
+                options: {{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {{
+                        y: {{
+                            beginAtZero: true,
+                            grid: {{ color: '#444' }},
+                            ticks: {{ color: '#e0e0e0' }}
+                        }},
+                        x: {{
+                            grid: {{ display: false }},
+                            ticks: {{ color: '#e0e0e0' }}
+                        }}
+                    }},
+                    plugins: {{
+                        legend: {{
+                            labels: {{ color: '#e0e0e0' }}
+                        }}
+                    }}
+                }}
+            }});
+        }}
+        
         // Auto-login via session
         if (sessionStorage.getItem('unlocked')) {{
-             // We can't auto-decrypt because we don't store the PIN in session for security (or maybe we could?)
-             // Actually, if we want auto-show, we'd need the PIN. 
-             // Let's just focus on the 'Enter PIN' UX for now, it's safer.
-             // But we authorize detail pages if this main page was unlocked once? 
-             // The detail pages check sessionStorage. 
-             // But to view THIS page again, you need to decrypt data again.
-             // Unless we store the DECRYPTED key or PIN in sessionStorage.
-             // Let's store the PIN in sessionStorage temporarily for convenience.
              const storedPin = sessionStorage.getItem('session_pin');
              if (storedPin) {{
                  document.getElementById('pin-input').value = storedPin;
-                 // Ideally trigger unlock automatically, but we need the DOM to be ready.
-                 // We'll let user click or hit enter, prepopulating is helpful enough.
              }}
         }}
         
